@@ -1,5 +1,6 @@
 from convert_view import ConvertView
 from study_view import StudyView
+from study_loading_view import StudyWithLoadingView
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -13,9 +14,11 @@ class MainApp(tk.Tk):
         notebook = ttk.Notebook(self)
         self.convert_view = ConvertView(notebook)
         self.study_view = StudyView(notebook)
-
+        self.study_loading_view = StudyWithLoadingView(notebook)
+        # 탭을 Notebook에 추가
         notebook.add(self.convert_view, text="변환하기")
         notebook.add(self.study_view, text="공부하기")
+        notebook.add(self.study_loading_view, text="공부하기(기추출)")
         notebook.pack(expand=True, fill='both')
 
         # 메뉴 예시 (공통 메뉴)

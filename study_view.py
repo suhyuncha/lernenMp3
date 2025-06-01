@@ -2,40 +2,17 @@ import tkinter as tk
 from pydub import AudioSegment
 import pygame
 import os
+from base_study_view import BaseStudyView
 
 
-class StudyView(tk.Frame):
+class StudyView(BaseStudyView):
     def __init__(self, parent):
-        super().__init__(parent)
-        self.segments = []
-        self.audio = None
-        self.audio_path = None
-
-        self.text_box = tk.Text(self, height=30, font=("Arial", 12))
-        self.text_box.pack(expand=True, fill='both', padx=10, pady=10)
-        self.text_box.tag_configure("de", foreground="blue")
-        self.text_box.tag_configure("ko", foreground="green")
-
-        self.text_box.bind("<Button-1>", self.on_click)
-
-        pygame.mixer.init()
+        super().__init__(parent, use_textbox=True)
+        # BaseStudyView에서 text_box, tag_configure, 클릭 바인딩 모두 처리하므로 여기서 따로 생성/바인딩 불필요
 
     def load_segments(self, segments, audio_path, ko_sentences):
-        """segments: Whisper segments, audio_path: mp3, ko_sentences: 한글 번역 리스트"""
-        self.segments = segments
-        self.audio_path = audio_path
-        self.audio = AudioSegment.from_file(audio_path)
-        self.text_box.delete("1.0", tk.END)
-        for i, seg in enumerate(segments):
-            de = seg["text"].strip()
-            ko = ko_sentences[i].strip() if i < len(ko_sentences) else ""
-            # 독일어 줄
-            start_idx = self.text_box.index(tk.END)
-            self.text_box.insert(tk.END, de + "\n", ("de", f"seg_{i}"))
-            # 한글 줄
-            self.text_box.insert(tk.END, ko + "\n", ("ko", f"seg_{i}"))
-            # 빈 줄(구분용, 태그 없음)
-            self.text_box.insert(tk.END, "\n")
+        # BaseStudyView의 show_segments를 그대로 사용하면 됨
+        self.show_segments(segments, audio_path, ko_sentences)
 
     def on_click(self, event):
         index = self.text_box.index(f"@{event.x},{event.y}")
@@ -47,7 +24,7 @@ class StudyView(tk.Frame):
                 break
         if seg_idx is not None and 0 <= seg_idx < len(self.segments):
             seg = self.segments[seg_idx]
-            print(f"재생할 세그먼트: {seg_idx + 1}, 시작: {seg['start']}, 종료: {seg['end']}")
+            #print(f"재생할 세그먼트: {seg_idx + 1}, 시작: {seg['start']}, 종료: {seg['end']}")
             self.play_segment(seg["start"], seg["end"])
         # 빈 줄(태그 없음) 클릭 시 아무 동작 안 함
 
