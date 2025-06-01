@@ -14,26 +14,25 @@ class BaseStudyView(tk.Frame):
         self.use_textbox = use_textbox
 
         if use_textbox:
+            # 텍스트박스
             self.text_box = tk.Text(self, height=30, font=("Arial", 11))
             self.text_box.pack(expand=True, fill='both', padx=10, pady=10)
             self.text_box.tag_configure("de", foreground="blue")
             self.text_box.tag_configure("ko", foreground="green")
             self.text_box.bind("<Button-1>", self.on_click)
+            self.highlight_btns = []
         else:
             canvas = tk.Canvas(self)
             scrollbar = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
             self.inner_frame = tk.Frame(canvas)
-
             self.inner_frame.bind(
                 "<Configure>",
                 lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
             )
             canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
             canvas.configure(yscrollcommand=scrollbar.set)
-
             canvas.pack(side="left", fill="both", expand=True)
             scrollbar.pack(side="right", fill="y")
-
         pygame.mixer.init()
 
     def show_segments(self, segments, audio_path, ko_sentences):
@@ -41,16 +40,59 @@ class BaseStudyView(tk.Frame):
         self.audio_path = audio_path
         self.audio = AudioSegment.from_file(audio_path)
         self.highlighted_set = set()
-        self.checkbox_vars = []  # 체크박스 상태 저장
+        #self.checkbox_vars = []  # 체크박스 상태 저장
 
         if self.use_textbox:
+            # # 기존 버튼 제거
+            # for btn in getattr(self, "highlight_btns", []):
+            #     btn.destroy()
+            # self.highlight_btns = []
+            # self.text_box.delete("1.0", tk.END)
+            # for i, seg in enumerate(segments):
+            #     de = seg["text"].strip()
+            #     ko = ko_sentences[i].strip() if i < len(ko_sentences) else ""
+            #     # 버튼 추가
+            #     btn = tk.Button(
+            #         self.left_btn_frame,
+            #         text="★",
+            #         width=1,
+            #         relief="flat",
+            #         command=lambda idx=i: self.toggle_highlight(idx)
+            #     )
+            #     btn.pack(pady=2)
+            #     self.highlight_btns.append(btn)
+            #     # 텍스트 삽입
+            #     self.text_box.insert(tk.END, de + "\n", ("de", f"seg_{i}"))
+            #     self.text_box.insert(tk.END, ko + "\n", ("ko", f"seg_{i}"))
+            #     self.text_box.insert(tk.END, "\n")
+
+            # 기존 버튼 제거
+            for btn in getattr(self, "highlight_btns", []):
+                btn.destroy()
+            self.highlight_btns = []
             self.text_box.delete("1.0", tk.END)
             for i, seg in enumerate(segments):
                 de = seg["text"].strip()
                 ko = ko_sentences[i].strip() if i < len(ko_sentences) else ""
-                self.text_box.insert(tk.END, de + "\n", ("de", f"seg_{i}"))
-                self.text_box.insert(tk.END, ko + "\n", ("ko", f"seg_{i}"))
+                # 버튼 생성
+                btn = tk.Button(
+                    self.text_box,
+                    text="★",
+                    width=1,
+                    relief="flat",
+                    command=lambda idx=i: self.toggle_highlight(idx)
+                )
+                self.highlight_btns.append(btn)
+                # 버튼을 텍스트박스에 삽입
+                self.text_box.window_create(tk.END, window=btn)
+                # 버튼 오른쪽에 독일어 텍스트 삽입 (줄 태그 포함)
+                self.text_box.insert(tk.END, " " + de + "\n", ("de", f"seg_{i}"))
+                # 한글 텍스트는 들여쓰기해서 삽입 (같은 세그먼트 태그)
+                indent = " " * (11)  # +1은 버튼 오른쪽 한 칸
+                self.text_box.insert(tk.END, indent + ko + "\n", ("ko", f"seg_{i}"))
+                # 세그먼트 간 공백 줄
                 self.text_box.insert(tk.END, "\n")
+
         else:
             # 기존 프레임 삭제
             for f in getattr(self, "segment_frames", []):
@@ -95,7 +137,7 @@ class BaseStudyView(tk.Frame):
                 ko_line.bind("<Button-1>", lambda e, idx=i: self.play_segment_by_idx(idx))
 
                 self.segment_frames.append((frame, text_frame))
-
+        
     def on_click(self, event):
         index = self.text_box.index(f"@{event.x},{event.y}")
         tags = self.text_box.tag_names(index)
@@ -111,18 +153,14 @@ class BaseStudyView(tk.Frame):
         # 빈 줄(태그 없음) 클릭 시 아무 동작 안 함
 
     def toggle_highlight(self, idx):
-        # 체크박스 상태에 따라 하이라이트 토글
-        frame, text_frame = self.segment_frames[idx]
-        var = self.checkbox_vars[idx]
-        if var.get():
-            for widget in text_frame.winfo_children():
-                widget.configure(bg="#ffffcc")
-            text_frame.configure(bg="#ffffcc")
+        seg_tag = f"seg_{idx}"
+        # 하이라이트 토글
+        current_bg = self.text_box.tag_cget(seg_tag, "background")
+        if current_bg == "" or current_bg == "SystemWindow":
+            self.text_box.tag_configure(seg_tag, background="#ffffcc")
             self.highlighted_set.add(idx)
         else:
-            for widget in text_frame.winfo_children():
-                widget.configure(bg=self.cget("bg"))
-            text_frame.configure(bg=self.cget("bg"))
+            self.text_box.tag_configure(seg_tag, background="")
             self.highlighted_set.discard(idx)
 
     def play_segment_by_idx(self, idx):

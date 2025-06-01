@@ -9,7 +9,7 @@ class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("MP3 → 텍스트 변환기")
-        self.geometry("900x600")
+        self.geometry("1000x800")
 
         notebook = ttk.Notebook(self)
         self.convert_view = ConvertView(notebook)
