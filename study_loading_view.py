@@ -24,36 +24,55 @@ def srt_time_to_sec(s):
 class StudyWithLoadingView(BaseStudyView):
     def __init__(self, parent):
         super().__init__(parent, use_textbox=True)
-        # 상단에 별도 프레임 생성 (텍스트박스보다 먼저 pack!)
-        top_frame = tk.Frame(self, height=36, bg="#f0f0f0")
-        top_frame.pack(side='bottom', fill='x')  # 하단에 배치
-        self.mp3_btn = tk.Button(top_frame, text="MP3 선택", command=self.select_mp3)
-        self.mp3_btn.pack(side='left', padx=10, pady=6)
-        self.de_srt_btn = tk.Button(top_frame, text="자막1(독일어) 선택", command=self.select_de_srt)
-        self.de_srt_btn.pack(side='left', padx=10, pady=6)
-        self.ko_srt_btn = tk.Button(top_frame, text="자막2(한글) 선택", command=self.select_ko_srt)
-        self.ko_srt_btn.pack(side='left', padx=10, pady=6)
-        # 텍스트박스는 BaseStudyView에서 이미 pack됨 (여기서 pack하지 않음)
+        self.mp3_path = None
+        self.de_srt_path = None
+        self.ko_srt_path = None
+
+        # 하단 프레임 생성
+        bottom_frame = tk.Frame(self, bg="#f0f0f0")
+        bottom_frame.pack(side='bottom', fill='x', padx=10, pady=10)
+
+        # 왼쪽: 버튼 세로 배치
+        btn_frame = tk.Frame(bottom_frame, bg="#f0f0f0")
+        btn_frame.pack(side='left', anchor='n')
+
+        self.mp3_btn = tk.Button(btn_frame, text="MP3 선택", command=self.select_mp3)
+        self.mp3_btn.pack(side='top', fill='x', pady=4)
+        self.de_srt_btn = tk.Button(btn_frame, text="자막1(독일어) 선택", command=self.select_de_srt)
+        self.de_srt_btn.pack(side='top', fill='x', pady=4)
+        self.ko_srt_btn = tk.Button(btn_frame, text="자막2(한글) 선택", command=self.select_ko_srt)
+        self.ko_srt_btn.pack(side='top', fill='x', pady=4)
+
+        # 오른쪽: 파일명 라벨 세로 배치
+        label_frame = tk.Frame(bottom_frame, bg="#f0f0f0")
+        label_frame.pack(side='left', anchor='n', padx=(20, 0))
+
+        self.mp3_label = tk.Label(label_frame, text="MP3: (미선택)", anchor='w', bg="#f0f0f0")
+        self.mp3_label.pack(side='top', fill='x', pady=4)
+        self.de_srt_label = tk.Label(label_frame, text="자막1: (미선택)", anchor='w', bg="#f0f0f0")
+        self.de_srt_label.pack(side='top', fill='x', pady=4)
+        self.ko_srt_label = tk.Label(label_frame, text="자막2: (미선택)", anchor='w', bg="#f0f0f0")
+        self.ko_srt_label.pack(side='top', fill='x', pady=4)
 
     def select_mp3(self):
         path = filedialog.askopenfilename(title="MP3 파일 선택", filetypes=[("MP3 files", "*.mp3")])
         if path:
             self.mp3_path = path
-            self.mp3_btn.config(text=f"MP3: {path.split('/')[-1]}")
+            self.mp3_label.config(text=f"MP3: {path}")
             self.try_load_all()
 
     def select_de_srt(self):
         path = filedialog.askopenfilename(title="독일어 SRT 선택", filetypes=[("SRT files", "*.srt")])
         if path:
             self.de_srt_path = path
-            self.de_srt_btn.config(text=f"자막1: {path.split('/')[-1]}")
+            self.de_srt_label.config(text=f"자막1: {path}")
             self.try_load_all()
 
     def select_ko_srt(self):
         path = filedialog.askopenfilename(title="한글 SRT 선택", filetypes=[("SRT files", "*.srt")])
         if path:
             self.ko_srt_path = path
-            self.ko_srt_btn.config(text=f"자막2: {path.split('/')[-1]}")
+            self.ko_srt_label.config(text=f"자막2: {path}")
             self.try_load_all()
 
     def try_load_all(self):

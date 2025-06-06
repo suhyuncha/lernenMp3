@@ -184,17 +184,17 @@ class ConvertView(tk.Frame):
                 self.save_srt_by_sentences(segments, de_srt_path)
                 self.save_srt_korean_by_sentences(segments, self.ko_sentences, ko_srt_path)
 
-                # StudyView에도 문장 단위로
+                # SRT 저장 후 StudyView에 데이터 전달
                 if hasattr(self.master, "study_view"):
-                    de_segments = parse_srt("output.srt")
-                    ko_segments = parse_srt("output_ko.srt")
-                    de_texts = [seg["text"] for seg in de_segments]
+                    de_segments = parse_srt(de_srt_path)
+                    ko_segments = parse_srt(ko_srt_path)
                     ko_texts = [seg["text"] for seg in ko_segments]
                     self.master.study_view.load_segments(
                         de_segments,
                         self.mp3_file,
                         ko_texts
                     )
+
                 messagebox.showinfo("완료", f"변환이 완료되었습니다.\nSRT 파일이 음성파일 위치에 저장되었습니다.\n\n- 독일어 SRT 및 한글 SRT")
                 # 최종 추출 결과만 하단 text_box에 출력
                 self.text_box.delete("1.0", tk.END)

@@ -21,7 +21,12 @@ class BaseStudyView(tk.Frame):
             self.text_box.tag_configure("de", foreground="blue")
             self.text_box.tag_configure("ko", foreground="green")
             self.text_box.bind("<Button-1>", self.on_click)
+            self.text_box.bind("<Button-3>", self.show_context_menu)  # 오른쪽 클릭
+            self.text_box.bind("<Control-Button-1>", self.show_context_menu)  # Mac 터치패드 두 손가락 클릭 지원
             self.highlight_btns = []
+            # 컨텍스트 메뉴 생성
+            self.context_menu = tk.Menu(self, tearoff=0)
+            self.context_menu.add_command(label="복사", command=self.copy_selected_text)
         else:
             canvas = tk.Canvas(self)
             scrollbar = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
@@ -44,29 +49,6 @@ class BaseStudyView(tk.Frame):
         #self.checkbox_vars = []  # 체크박스 상태 저장
 
         if self.use_textbox:
-            # # 기존 버튼 제거
-            # for btn in getattr(self, "highlight_btns", []):
-            #     btn.destroy()
-            # self.highlight_btns = []
-            # self.text_box.delete("1.0", tk.END)
-            # for i, seg in enumerate(segments):
-            #     de = seg["text"].strip()
-            #     ko = ko_sentences[i].strip() if i < len(ko_sentences) else ""
-            #     # 버튼 추가
-            #     btn = tk.Button(
-            #         self.left_btn_frame,
-            #         text="★",
-            #         width=1,
-            #         relief="flat",
-            #         command=lambda idx=i: self.toggle_highlight(idx)
-            #     )
-            #     btn.pack(pady=2)
-            #     self.highlight_btns.append(btn)
-            #     # 텍스트 삽입
-            #     self.text_box.insert(tk.END, de + "\n", ("de", f"seg_{i}"))
-            #     self.text_box.insert(tk.END, ko + "\n", ("ko", f"seg_{i}"))
-            #     self.text_box.insert(tk.END, "\n")
-
             # 기존 버튼 제거
             for btn in getattr(self, "highlight_btns", []):
                 btn.destroy()
@@ -234,3 +216,18 @@ class BaseStudyView(tk.Frame):
         if not ko_srt_path:
             return
         # ...이후 기존 로직...
+
+    def show_context_menu(self, event):
+        try:
+            if self.text_box.tag_ranges(tk.SEL):
+                self.context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.context_menu.grab_release()
+
+    def copy_selected_text(self):
+        try:
+            selected = self.text_box.get(tk.SEL_FIRST, tk.SEL_LAST)
+            self.clipboard_clear()
+            self.clipboard_append(selected)
+        except tk.TclError:
+            pass
