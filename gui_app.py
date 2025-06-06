@@ -1,9 +1,10 @@
-from convert_view import ConvertView
-from study_view import StudyView
-from study_loading_view import StudyWithLoadingView
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import os
+
+from convert_view import ConvertView
+from study_loading_view import StudyWithLoadingView
 
 class MainApp(tk.Tk):
     def __init__(self):
@@ -11,15 +12,12 @@ class MainApp(tk.Tk):
         self.title("MP3 → 텍스트 변환기")
         self.geometry("1000x800")
 
-        # 탭을 아래로 배치(tabposition="s")
         notebook = ttk.Notebook(self)
         self.convert_view = ConvertView(notebook)
-        self.study_view = StudyView(notebook)
         self.study_loading_view = StudyWithLoadingView(notebook)
         # 탭을 Notebook에 추가
         notebook.add(self.convert_view, text="변환하기")
-        notebook.add(self.study_view, text="공부하기")
-        notebook.add(self.study_loading_view, text="공부하기(기추출)")
+        notebook.add(self.study_loading_view, text="공부하기(추출/기추출)")
         notebook.pack(expand=True, fill='both')
 
         # 메뉴 예시 (공통 메뉴)
@@ -48,6 +46,21 @@ class MainApp(tk.Tk):
                     self.convert_view.last_result["segments"],
                     self.convert_view.mp3_file,
                     self.convert_view.ko_sentences
+                )
+        elif current_tab == "공부하기(기추출)":
+            # 변환 결과가 있고, 아직 파일이 로드되지 않았다면 자동 로드
+            if (self.convert_view.last_result and
+                self.convert_view.mp3_file and
+                hasattr(self.study_loading_view, "mp3_path") and
+                not self.study_loading_view.mp3_path):
+                base = os.path.splitext(self.convert_view.mp3_file)[0]
+                de_srt_path = base + ".srt"
+                ko_srt_path = base + "_ko.srt"
+                # StudyWithLoadingView의 load_files 호출
+                self.study_loading_view.load_files(
+                    self.convert_view.mp3_file,
+                    de_srt_path,
+                    ko_srt_path
                 )
 
 if __name__ == "__main__":
