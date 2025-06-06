@@ -2,6 +2,7 @@ import tkinter as tk
 from pydub import AudioSegment
 import pygame
 import os
+from tkinter import filedialog
 
 class BaseStudyView(tk.Frame):
     def __init__(self, parent, use_textbox=False):
@@ -215,3 +216,21 @@ class BaseStudyView(tk.Frame):
         self.clipboard_clear()
         self.clipboard_append(word)
         self.hide_copy_tooltip()
+
+    def load_files(self):
+        mp3_path = filedialog.askopenfilename(title="MP3 파일 선택", filetypes=[("MP3 files", "*.mp3")])
+        if not mp3_path:
+            return
+        self.after(100, lambda: self.ask_de_srt(mp3_path))
+
+    def ask_de_srt(self, mp3_path):
+        de_srt_path = filedialog.askopenfilename(title="독일어 SRT 선택", filetypes=[("SRT files", "*.srt")])
+        if not de_srt_path:
+            return
+        self.after(100, lambda: self.ask_ko_srt(mp3_path, de_srt_path))
+
+    def ask_ko_srt(self, mp3_path, de_srt_path):
+        ko_srt_path = filedialog.askopenfilename(title="한글 SRT 선택", filetypes=[("SRT files", "*.srt")])
+        if not ko_srt_path:
+            return
+        # ...이후 기존 로직...

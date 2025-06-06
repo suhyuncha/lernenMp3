@@ -24,24 +24,43 @@ def srt_time_to_sec(s):
 class StudyWithLoadingView(BaseStudyView):
     def __init__(self, parent):
         super().__init__(parent, use_textbox=True)
-        # 상단에 별도 프레임 생성
+        # 상단에 별도 프레임 생성 (텍스트박스보다 먼저 pack!)
         top_frame = tk.Frame(self, height=36, bg="#f0f0f0")
-        top_frame.pack(side='top', fill='x')
-        btn = tk.Button(top_frame, text="파일선택", command=self.load_files)
-        btn.pack(side='left', padx=10, pady=6)
-        # self.text_box는 BaseStudyView에서 이미 생성되어 있으므로 따로 pack할 필요 없음
+        top_frame.pack(side='bottom', fill='x')  # 하단에 배치
+        self.mp3_btn = tk.Button(top_frame, text="MP3 선택", command=self.select_mp3)
+        self.mp3_btn.pack(side='left', padx=10, pady=6)
+        self.de_srt_btn = tk.Button(top_frame, text="자막1(독일어) 선택", command=self.select_de_srt)
+        self.de_srt_btn.pack(side='left', padx=10, pady=6)
+        self.ko_srt_btn = tk.Button(top_frame, text="자막2(한글) 선택", command=self.select_ko_srt)
+        self.ko_srt_btn.pack(side='left', padx=10, pady=6)
+        # 텍스트박스는 BaseStudyView에서 이미 pack됨 (여기서 pack하지 않음)
 
-    def load_files(self):
-        mp3_path = filedialog.askopenfilename(title="MP3 파일 선택", filetypes=[("MP3 files", "*.mp3")])
-        if not mp3_path:
-            return
-        de_srt_path = filedialog.askopenfilename(title="독일어 SRT 선택", filetypes=[("SRT files", "*.srt")])
-        if not de_srt_path:
-            return
-        ko_srt_path = filedialog.askopenfilename(title="한글 SRT 선택", filetypes=[("SRT files", "*.srt")])
-        if not ko_srt_path:
-            return
+    def select_mp3(self):
+        path = filedialog.askopenfilename(title="MP3 파일 선택", filetypes=[("MP3 files", "*.mp3")])
+        if path:
+            self.mp3_path = path
+            self.mp3_btn.config(text=f"MP3: {path.split('/')[-1]}")
+            self.try_load_all()
 
+    def select_de_srt(self):
+        path = filedialog.askopenfilename(title="독일어 SRT 선택", filetypes=[("SRT files", "*.srt")])
+        if path:
+            self.de_srt_path = path
+            self.de_srt_btn.config(text=f"자막1: {path.split('/')[-1]}")
+            self.try_load_all()
+
+    def select_ko_srt(self):
+        path = filedialog.askopenfilename(title="한글 SRT 선택", filetypes=[("SRT files", "*.srt")])
+        if path:
+            self.ko_srt_path = path
+            self.ko_srt_btn.config(text=f"자막2: {path.split('/')[-1]}")
+            self.try_load_all()
+
+    def try_load_all(self):
+        if self.mp3_path and self.de_srt_path and self.ko_srt_path:
+            self.load_files(self.mp3_path, self.de_srt_path, self.ko_srt_path)
+
+    def load_files(self, mp3_path, de_srt_path, ko_srt_path):
         de_segments = parse_srt(de_srt_path)
         ko_segments = parse_srt(ko_srt_path)
         # ko_sentences는 ko_segments의 text만 추출
@@ -59,11 +78,9 @@ class StudyWithLoadingView(BaseStudyView):
         except Exception as e:
             messagebox.showerror("오류", f"MP3 파일을 열 수 없습니다: {e}")
             return
-
         if not de_segments:
             messagebox.showerror("오류", "SRT 파일에 segment가 없습니다.")
             return
-
         srt_end = de_segments[-1]["end"]
         # 예: SRT 마지막 end가 mp3 길이보다 2초 이상 크거나, mp3 길이의 80% 미만이면 경고
         if srt_end > mp3_duration + 2 or srt_end < mp3_duration * 0.8:
@@ -73,5 +90,4 @@ class StudyWithLoadingView(BaseStudyView):
                 "파일을 다시 선택해 주세요."
             )
             return
-
         self.show_segments(de_segments, mp3_path, ko_sentences)

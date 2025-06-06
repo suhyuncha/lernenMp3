@@ -11,6 +11,7 @@ class MainApp(tk.Tk):
         self.title("MP3 → 텍스트 변환기")
         self.geometry("1000x800")
 
+        # 탭을 아래로 배치(tabposition="s")
         notebook = ttk.Notebook(self)
         self.convert_view = ConvertView(notebook)
         self.study_view = StudyView(notebook)
