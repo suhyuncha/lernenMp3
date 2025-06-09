@@ -3,4 +3,6 @@ pydub
 pygame
 googletrans
 requests
-# whisper 등 필요한 패키지 추가
+openai-whisper
+torch
+numpy
