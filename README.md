@@ -26,6 +26,25 @@
 - 필수 패키지: tkinter, pydub, pygame, googletrans, requests 등  
   (requirements.txt 참고)
 
+### 설치 및 실행 방법
+
+1. Python 3.12.10 설치 (pyenv 권장)
+2. 가상환경 생성 및 활성화
+    ```bash
+    pyenv install 3.12.10
+    pyenv local 3.12.10
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+3. 패키지 설치
+    ```bash
+    pip install -r requirements.txt
+    ```
+4. 실행
+    ```bash
+    python main.py
+    ```
+
 ### 참고
 - Whisper 모델은 CPU에서 FP16 미지원 경고가 뜰 수 있으나, 정상 동작합니다.
 - 네이버 Papago 번역을 사용하려면 별도 API 키가 필요합니다.
@@ -57,6 +76,25 @@
 - Python 3.8 or higher
 - Required packages: tkinter, pydub, pygame, googletrans, requests, etc.  
   (See requirements.txt)
+
+### 설치 및 실행 방법
+
+1. Python 3.12.10 설치 (pyenv 권장)
+2. 가상환경 생성 및 활성화
+    ```bash
+    pyenv install 3.12.10
+    pyenv local 3.12.10
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+3. 패키지 설치
+    ```bash
+    pip install -r requirements.txt
+    ```
+4. 실행
+    ```bash
+    python main.py
+    ```
 
 ### Notes
 - You may see a warning about FP16 not being supported on CPU for Whisper; this is normal.
