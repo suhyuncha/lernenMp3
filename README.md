@@ -45,6 +45,21 @@
     python main.py
     ```
 
+### 시스템 의존성 (macOS 기준)
+
+아래 패키지는 Homebrew로 미리 설치해야 합니다.
+
+```bash
+# ffmpeg (오디오 변환/재생 필수)
+brew install ffmpeg
+
+# (필요시) 최신 tcl-tk (tkinter GUI 오류 발생 시)
+brew install tcl-tk
+```
+
+- ffmpeg가 설치되어 있지 않으면 변환/재생 기능이 동작하지 않습니다.
+- tcl-tk는 tkinter 관련 오류가 있을 때만 설치하면 됩니다.
+
 ### 참고
 - Whisper 모델은 CPU에서 FP16 미지원 경고가 뜰 수 있으나, 정상 동작합니다.
 - 네이버 Papago 번역을 사용하려면 별도 API 키가 필요합니다.
@@ -95,6 +110,21 @@
     ```bash
     python main.py
     ```
+
+### 시스템 의존성 (macOS 기준)
+
+아래 패키지는 Homebrew로 미리 설치해야 합니다.
+
+```bash
+# ffmpeg (오디오 변환/재생 필수)
+brew install ffmpeg
+
+# (필요시) 최신 tcl-tk (tkinter GUI 오류 발생 시)
+brew install tcl-tk
+```
+
+- ffmpeg가 설치되어 있지 않으면 변환/재생 기능이 동작하지 않습니다.
+- tcl-tk는 tkinter 관련 오류가 있을 때만 설치하면 됩니다.
 
 ### Notes
 - You may see a warning about FP16 not being supported on CPU for Whisper; this is normal.
