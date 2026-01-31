@@ -8,6 +8,20 @@ from study_loading_view import StudyWithLoadingView
 
 class MainApp(tk.Tk):
     def __init__(self):
+        """
+        Initialize the main application window for lernenMP3.
+
+        Sets up the main window properties, including title and size.
+        Creates a tabbed interface (Notebook) with two tabs:
+            - Convert: For MP3 file conversion.
+            - Study (Extracted/Pre-extracted): For studying with extracted or pre-extracted content.
+        Adds a menu bar with options to open an MP3 file and exit the application.
+        Binds a handler to the tab change event.
+
+        Attributes:
+            convert_view (ConvertView): The view for MP3 conversion.
+            study_loading_view (StudyWithLoadingView): The view for studying with extracted/pre-extracted content.
+        """
         super().__init__()
         self.title("lernenMP3 - MP3 Conversion and Study Tool")
         self.geometry("1000x800")
@@ -15,12 +29,12 @@ class MainApp(tk.Tk):
         notebook = ttk.Notebook(self)
         self.convert_view = ConvertView(notebook)
         self.study_loading_view = StudyWithLoadingView(notebook)
-        # 탭을 Notebook에 추가
+        # Add tabs to the Notebook
         notebook.add(self.convert_view, text="Convert")
         notebook.add(self.study_loading_view, text="Study (Extracted/Pre-extracted)")
         notebook.pack(expand=True, fill='both')
 
-        # 메뉴 예시 (공통 메뉴)
+        # Example menu (common menu)
         menubar = tk.Menu(self)
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label="Open MP3 File", command=self.convert_view.open_file)
@@ -48,8 +62,8 @@ class MainApp(tk.Tk):
                     self.convert_view.mp3_file,
                     self.convert_view.ko_sentences
                 )
-        elif current_tab == "공부하기(기추출)":
-            # 변환 결과가 있고, 아직 파일이 로드되지 않았다면 자동 로드
+        elif current_tab == "Study (Extracted/Pre-extracted)":
+            # If there is a conversion result and the files have not been loaded yet, load them automatically
             if (self.convert_view.last_result and
                 self.convert_view.mp3_file and
                 hasattr(self.study_loading_view, "mp3_path") and
