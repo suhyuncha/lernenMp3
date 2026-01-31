@@ -22,8 +22,8 @@
 5. **문장별로 자막을 보며 학습 진행**
 
 ### 요구 사항
-- Python 3.8 이상
-- 필수 패키지: tkinter, pydub, pygame, googletrans, requests 등  
+- Python 3.8 이상 (3.12.10에서 테스트됨)
+- 필수 패키지: tkinter, pydub, pygame, googletrans, requests, openai-whisper, torch, numpy  
   (requirements.txt 참고)
 
 ### 설치 및 실행 방법
@@ -62,7 +62,7 @@ brew install tcl-tk
 
 ### 참고
 - Whisper 모델은 CPU에서 FP16 미지원 경고가 뜰 수 있으나, 정상 동작합니다.
-- 네이버 Papago 번역을 사용하려면 별도 API 키가 필요합니다.
+- 네이버 Papago 번역은 현재 미구현 상태입니다. (Google Translate만 사용 가능)
 
 ---
 
@@ -88,8 +88,8 @@ brew install tcl-tk
 5. **Study each sentence with subtitles**
 
 ### Requirements
-- Python 3.8 or higher
-- Required packages: tkinter, pydub, pygame, googletrans, requests, etc.  
+- Python 3.8 or higher (tested with 3.12.10)
+- Required packages: tkinter, pydub, pygame, googletrans, requests, openai-whisper, torch, numpy  
   (See requirements.txt)
 
 ### 설치 및 실행 방법
@@ -128,6 +128,6 @@ brew install tcl-tk
 
 ### Notes
 - You may see a warning about FP16 not being supported on CPU for Whisper; this is normal.
-- To use Naver Papago translation, you need your own API key.
+- Naver Papago translation is not yet implemented. (Only Google Translate is available)
 
 ---
