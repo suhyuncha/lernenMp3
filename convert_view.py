@@ -278,48 +278,82 @@ class ConvertView(tk.Frame):
         pass
 
 def split_segments_by_period(segments):
+    """
+    Whisper 세그먼트를 문장 단위로 분할하되, 시간을 정확하게 계산
+    
+    개선사항:
+    - 원본: 문장이 segment 중간에서 시작/끝날 때 부정확함
+    - 개선: character-level 위치를 통한 선형 보간으로 정확한 시간 계산
+    - 결과: 인접 문장 간 시간 겹침 제거
+    """
     import re
     # 1. 모든 세그먼트 텍스트를 순서대로 이어붙임
     texts = [seg["text"].strip() for seg in segments]
     full_text = " ".join(texts)
+    
     # 2. 문장 단위로 쪼개기 (오직 . ! ? 만 기준)
-    # 쉼표(,)는 분할 기준에서 제외
     sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', full_text) if s.strip()]
-    # 3. 문장별로 원본 세그먼트의 시간정보를 추적
+    
+    # 3. 각 segment의 character-level 위치 추적
+    segment_char_positions = []  # [(start_char, end_char, seg_obj), ...]
+    char_pos = 0
+    
+    for seg in segments:
+        seg_text = seg["text"].strip()
+        start_char = char_pos
+        end_char = char_pos + len(seg_text)
+        segment_char_positions.append((start_char, end_char, seg))
+        char_pos = end_char + 1  # +1 for the space between segments
+    
+    # 4. 각 문장에 대해 시간정보를 정확히 계산
     new_segments = []
-    acc_len = 0
-    seg_idx = 0
-    char_idx = 0
+    search_start = 0
+    
     for sentence in sentences:
-        # 문장이 전체 텍스트에서 어디서 시작하는지 찾기
-        sent_start = full_text.find(sentence, char_idx)
-        sent_end = sent_start + len(sentence)
-        # 해당 문장이 포함된 세그먼트 범위 찾기
-        seg_start_idx = None
-        seg_end_idx = None
-        seg_char_start = 0
-        for i, seg in enumerate(segments):
-            seg_text = seg["text"].strip()
-            seg_len = len(seg_text)
-            seg_char_end = seg_char_start + seg_len
-            # 문장 시작이 이 세그먼트에 포함?
-            if seg_start_idx is None and seg_char_end > sent_start:
-                seg_start_idx = i
-            # 문장 끝이 이 세그먼트에 포함?
-            if seg_char_end >= sent_end:
-                seg_end_idx = i
+        # 문장을 full_text에서 찾기
+        sent_start_char = full_text.find(sentence, search_start)
+        if sent_start_char == -1:
+            continue
+        sent_end_char = sent_start_char + len(sentence)
+        search_start = sent_end_char
+        
+        # 시작 위치에 해당하는 segment 찾기
+        start_seg_idx = None
+        start_offset = None
+        
+        for seg_idx, (seg_start, seg_end, seg) in enumerate(segment_char_positions):
+            if seg_start <= sent_start_char < seg_end:
+                start_seg_idx = seg_idx
+                # segment 내 상대 위치 (0.0 ~ 1.0)
+                start_offset = (sent_start_char - seg_start) / (seg_end - seg_start) if (seg_end - seg_start) > 0 else 0
                 break
-            seg_char_start = seg_char_end + 1  # +1 for the space added above
-        # 시작/끝 시간 할당
-        if seg_start_idx is not None and seg_end_idx is not None:
-            start = segments[seg_start_idx]["start"]
-            end = segments[seg_end_idx]["end"]
+        
+        # 끝 위치에 해당하는 segment 찾기
+        end_seg_idx = None
+        end_offset = None
+        
+        for seg_idx, (seg_start, seg_end, seg) in enumerate(segment_char_positions):
+            if seg_start < sent_end_char <= seg_end:
+                end_seg_idx = seg_idx
+                # segment 내 상대 위치 (0.0 ~ 1.0)
+                end_offset = (sent_end_char - seg_start) / (seg_end - seg_start) if (seg_end - seg_start) > 0 else 1.0
+                break
+        
+        # 시간 계산 (선형 보간)
+        if start_seg_idx is not None and end_seg_idx is not None:
+            start_seg = segment_char_positions[start_seg_idx][2]
+            end_seg = segment_char_positions[end_seg_idx][2]
+            
+            # 선형 보간을 통한 정확한 시간 계산
+            start_time = start_seg["start"] + (start_seg["end"] - start_seg["start"]) * start_offset
+            end_time = end_seg["start"] + (end_seg["end"] - end_seg["start"]) * end_offset
+            
             new_segments.append({
-                "start": start,
-                "end": end,
+                "start": start_time,
+                "end": end_time,
                 "text": sentence
             })
-        char_idx = sent_end
+    
     return new_segments
 
 def merge_segments_to_sentences(segments):
