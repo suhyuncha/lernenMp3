@@ -23,27 +23,49 @@
 
 ### 요구 사항
 - Python 3.8 이상 (3.12.10에서 테스트됨)
-- 필수 패키지: tkinter, pydub, pygame, googletrans, requests, openai-whisper, torch, numpy  
-  (requirements.txt 참고)
+- 필수 패키지: pydub, pygame, googletrans, requests, openai-whisper, torch, numpy  
+  (requirements.txt 참고, tkinter는 내장)
 
 ### 설치 및 실행 방법
 
-1. Python 3.12.10 설치 (pyenv 권장)
-2. 가상환경 생성 및 활성화
+#### pyenv 사용 (권장)
+
+1. pyenv 설치 및 초기화
+    ```bash
+    brew install pyenv
+    # ~/.zshrc 또는 ~/.bash_profile에 다음 추가:
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    # 터미널 재시작
+    ```
+
+2. Python 3.12.10 설치
     ```bash
     pyenv install 3.12.10
     pyenv local 3.12.10
-    python -m venv .venv
-    source .venv/bin/activate
     ```
+
 3. 패키지 설치
     ```bash
     pip install -r requirements.txt
     ```
-4. 실행
+
+4. 프로그램 실행
     ```bash
     python main.py
     ```
+
+#### 매번 프로그램 실행 시
+
+pyenv로 설정된 Python 버전에서 직접 실행하세요:
+```bash
+python main.py
+```
+
+또는 pyenv 경로를 직접 사용하여 실행할 수 있습니다:
+```bash
+~/.pyenv/versions/3.12.10/bin/python main.py
+```
 
 ### 시스템 의존성 (macOS 기준)
 
@@ -89,29 +111,51 @@ brew install tcl-tk
 
 ### Requirements
 - Python 3.8 or higher (tested with 3.12.10)
-- Required packages: tkinter, pydub, pygame, googletrans, requests, openai-whisper, torch, numpy  
-  (See requirements.txt)
+- Required packages: pydub, pygame, googletrans, requests, openai-whisper, torch, numpy  
+  (See requirements.txt, tkinter is built-in)
 
-### 설치 및 실행 방법
+### Installation and Setup
 
-1. Python 3.12.10 설치 (pyenv 권장)
-2. 가상환경 생성 및 활성화
+#### Using pyenv (Recommended)
+
+1. Install and initialize pyenv
+    ```bash
+    brew install pyenv
+    # Add to ~/.zshrc or ~/.bash_profile:
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    # Restart terminal
+    ```
+
+2. Install Python 3.12.10
     ```bash
     pyenv install 3.12.10
     pyenv local 3.12.10
-    python -m venv .venv
-    source .venv/bin/activate
     ```
-3. 패키지 설치
+
+3. Install packages
     ```bash
     pip install -r requirements.txt
     ```
-4. 실행
+
+4. Run the program
     ```bash
     python main.py
     ```
 
-### 시스템 의존성 (macOS 기준)
+#### Running the Program Each Time
+
+Run the program using pyenv-configured Python:
+```bash
+python main.py
+```
+
+Or directly using the pyenv Python path:
+```bash
+~/.pyenv/versions/3.12.10/bin/python main.py
+```
+
+### System Dependencies (macOS)
 
 아래 패키지는 Homebrew로 미리 설치해야 합니다.
 
