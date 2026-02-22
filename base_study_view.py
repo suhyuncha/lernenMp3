@@ -3,6 +3,7 @@ from pydub import AudioSegment
 import pygame
 import os
 from tkinter import filedialog
+import subprocess
 
 class BaseStudyView(tk.Frame):
     def __init__(self, parent, use_textbox=False):
@@ -15,6 +16,25 @@ class BaseStudyView(tk.Frame):
         self.use_textbox = use_textbox
 
         if use_textbox:
+            # 재생 속도 옵션 (텍스트박스 위)
+            speed_frame = tk.Frame(self, bg="#f0f0f0")
+            speed_frame.pack(pady=5, padx=10, fill='x')
+            
+            tk.Label(speed_frame, text="재생 속도:", bg="#f0f0f0", font=("Arial", 10)).pack(side='left', padx=(0, 10))
+            
+            self.speed_var = tk.DoubleVar(value=1.0)
+            speed_options = [0.5, 0.8, 1.0]
+            
+            for speed in speed_options:
+                tk.Radiobutton(
+                    speed_frame,
+                    text=f"{speed}배",
+                    variable=self.speed_var,
+                    value=speed,
+                    bg="#f0f0f0",
+                    font=("Arial", 10)
+                ).pack(side='left', padx=5)
+            
             # 텍스트박스
             self.text_box = tk.Text(self, height=30, font=("Arial", 11))
             self.text_box.pack(expand=True, fill='both', padx=10, pady=10)
@@ -159,25 +179,72 @@ class BaseStudyView(tk.Frame):
             end_sec = start_sec + 0.5
         import tempfile
         import time
+        import subprocess
+        
         segment = self.audio[int(start_sec * 1000):int(end_sec * 1000)]
+        
+        # 선택된 재생 속도 가져오기
+        speed = getattr(self, 'speed_var', None)
+        playback_speed = speed.get() if speed else 1.0
+        
+        # 임시 WAV 파일 생성
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_wav:
-            segment.export(tmp_wav.name, format="wav")
             tmp_wav_path = tmp_wav.name
+        
+        # 원본 segment를 WAV로 저장
+        segment.export(tmp_wav_path, format="wav")
+        
+        # 속도 변환이 필요하면 ffmpeg 사용
+        cleanup_paths = [tmp_wav_path]
+        play_path = tmp_wav_path
+        
+        if playback_speed != 1.0:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_wav_out:
+                tmp_wav_out_path = tmp_wav_out.name
+            cleanup_paths.append(tmp_wav_out_path)
+            
+            try:
+                # ffmpeg으로 속도 변환
+                cmd = [
+                    'ffmpeg',
+                    '-i', tmp_wav_path,
+                    '-filter:a', f'atempo={playback_speed}',
+                    '-y',
+                    tmp_wav_out_path
+                ]
+                result = subprocess.run(cmd, capture_output=True, timeout=30)
+                
+                if result.returncode == 0:
+                    play_path = tmp_wav_out_path
+                else:
+                    print(f"속도 변환 실패, 원본으로 재생합니다")
+            except Exception as e:
+                print(f"속도 변환 오류: {e}")
+        
+        # 오디오 재생
         try:
-            pygame.mixer.music.load(tmp_wav_path)
+            pygame.mixer.music.load(play_path)
             pygame.mixer.music.play()
         except Exception as e:
             print("오디오 재생 오류:", e)
+            for path in cleanup_paths:
+                try:
+                    os.remove(path)
+                except:
+                    pass
             return
 
+        # 재생 완료 후 정리
         def poll_cleanup():
             if pygame.mixer.music.get_busy():
                 self.after(100, poll_cleanup)
             else:
-                try:
-                    os.remove(tmp_wav_path)
-                except Exception:
-                    pass
+                for path in cleanup_paths:
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+        
         poll_cleanup()
 
     def show_copy_tooltip(self, event, word, label):

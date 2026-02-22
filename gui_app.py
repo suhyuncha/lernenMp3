@@ -36,19 +36,29 @@ class MainApp(tk.Tk):
 
         # Example menu (common menu)
         menubar = tk.Menu(self)
-        filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Open MP3 File", command=self.convert_view.open_file)
+        self.filemenu = tk.Menu(menubar, tearoff=0)
+        self.filemenu.add_command(label="Open MP3 File", command=self.convert_view.open_file)
 
-        filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=self.quit)
-        menubar.add_cascade(label="File", menu=filemenu)
+        self.filemenu.add_separator()
+        self.filemenu.add_command(label="Exit", command=self.quit)
+        menubar.add_cascade(label="File", menu=self.filemenu)
         self.config(menu=menubar)
+        
+        # notebook 참조 저장
+        self.notebook = notebook
 
         notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
     def on_tab_changed(self, event):
         # Called when the tab is changed
         current_tab = event.widget.tab(event.widget.select(), "text")
+        
+        # Menu 상태 관리: Study 탭에서는 "Open MP3 File" 메뉴 비활성화
+        if current_tab == "Study (Extracted/Pre-extracted)":
+            self.filemenu.entryconfig(0, state=tk.DISABLED)
+        else:
+            self.filemenu.entryconfig(0, state=tk.NORMAL)
+        
         if current_tab == "Study":
             # When the "Study" tab is selected, check if there is a conversion result
             if not self.convert_view.last_result:
