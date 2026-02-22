@@ -2,7 +2,7 @@ import tkinter as tk
 from pydub import AudioSegment
 import pygame
 import os
-from tkinter import filedialog
+from tkinter import filedialog, scrolledtext
 import subprocess
 
 class BaseStudyView(tk.Frame):
@@ -55,7 +55,7 @@ class BaseStudyView(tk.Frame):
             ).pack(side='left', padx=(0, 10))
             
             # 텍스트박스
-            self.text_box = tk.Text(self, height=30, font=("Arial", 11))
+            self.text_box = scrolledtext.ScrolledText(self, height=30, font=("Arial", 11), wrap=tk.WORD)
             self.text_box.pack(expand=True, fill='both', padx=10, pady=10)
             self.text_box.tag_configure("de", foreground="blue")
             self.text_box.tag_configure("ko", foreground="green")
