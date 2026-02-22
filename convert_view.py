@@ -277,6 +277,89 @@ class ConvertView(tk.Frame):
         # 더 이상 사용하지 않음 (문장 단위 SRT만 저장)
         pass
 
+# 독일어 접속사 리스트
+GERMAN_CONJUNCTIONS = {
+    # 등위 접속사 (coordinating conjunctions)
+    'und', 'aber', 'oder', 'denn', 'sondern', 'noch', 'so',
+    # 종속 접속사 (subordinating conjunctions) - 주요 항목만
+    'weil', 'obwohl', 'wenn', 'während', 'da', 'nachdem', 'bevor',
+    'sobald', 'falls', 'insofern', 'damit', 'sodass', 'indem'
+}
+
+def split_long_sentences(sentence, start_time, end_time):
+    """
+    50개 단어 이상인 문장을 접속사 기준으로 분할
+    접속사는 뒤 문장에 포함됨
+    
+    Args:
+        sentence (str): 분할할 문장
+        start_time (float): 문장 시작 시간
+        end_time (float): 문장 종료 시간
+        
+    Returns:
+        list: [{"start": ..., "end": ..., "text": ...}, ...]
+    """
+    words = sentence.split()
+    
+    # 50개 단어 미만이면 그대로 반환
+    if len(words) < 50:
+        return [{
+            "start": start_time,
+            "end": end_time,
+            "text": sentence
+        }]
+    
+    # 중간 위치 찾기
+    mid_idx = len(words) // 2
+    search_range = len(words) // 4  # 중간에서 ±25% 범위 내에서 검색
+    
+    best_conj_idx = None
+    best_distance = float('inf')
+    
+    # 중간 근처에서 가장 가까운 접속사 찾기
+    for i in range(max(0, mid_idx - search_range), min(len(words), mid_idx + search_range + 1)):
+        word_lower = words[i].lower().rstrip(',.!?;:')
+        if word_lower in GERMAN_CONJUNCTIONS:
+            distance = abs(i - mid_idx)
+            if distance < best_distance:
+                best_distance = distance
+                best_conj_idx = i
+    
+    # 접속사를 찾지 못하면 그대로 반환
+    if best_conj_idx is None:
+        return [{
+            "start": start_time,
+            "end": end_time,
+            "text": sentence
+        }]
+    
+    # 접속사를 기준으로 두 부분으로 분할 (접속사는 뒤에 포함)
+    first_part_words = words[:best_conj_idx]
+    second_part_words = words[best_conj_idx:]
+    
+    first_part = " ".join(first_part_words)
+    second_part = " ".join(second_part_words)
+    
+    # 단어 위치 기반 시간 계산
+    first_word_count = len(first_part_words)
+    total_word_count = len(words)
+    ratio = first_word_count / total_word_count if total_word_count > 0 else 0.5
+    
+    mid_time = start_time + (end_time - start_time) * ratio
+    
+    return [
+        {
+            "start": start_time,
+            "end": mid_time,
+            "text": first_part
+        },
+        {
+            "start": mid_time,
+            "end": end_time,
+            "text": second_part
+        }
+    ]
+
 def split_segments_by_period(segments):
     """
     Whisper 세그먼트를 문장 단위로 분할하되, 시간을 정확하게 계산
@@ -348,11 +431,9 @@ def split_segments_by_period(segments):
             start_time = start_seg["start"] + (start_seg["end"] - start_seg["start"]) * start_offset
             end_time = end_seg["start"] + (end_seg["end"] - end_seg["start"]) * end_offset
             
-            new_segments.append({
-                "start": start_time,
-                "end": end_time,
-                "text": sentence
-            })
+            # 긴 문장 분할 처리 (50단어 이상을 접속사로 분할)
+            split_sentences = split_long_sentences(sentence, start_time, end_time)
+            new_segments.extend(split_sentences)
     
     return new_segments
 
