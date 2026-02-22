@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from base_study_view import BaseStudyView
 import re
+import os
 
 def parse_srt(srt_path):
     # SRT 파싱: [(start, end, text), ...]
@@ -59,6 +60,22 @@ class StudyWithLoadingView(BaseStudyView):
         if path:
             self.mp3_path = path
             self.mp3_label.config(text=f"MP3: {path}")
+            
+            # 파일명에서 확장자 제거 (e.g., "/path/filename.mp3" -> "/path/filename")
+            base_path = os.path.splitext(path)[0]
+            
+            # 독일어 자막 파일 자동 설정 (filename.srt)
+            de_srt_path = base_path + ".srt"
+            if os.path.exists(de_srt_path):
+                self.de_srt_path = de_srt_path
+                self.de_srt_label.config(text=f"자막1: {de_srt_path}")
+            
+            # 한글 자막 파일 자동 설정 (filename_ko.srt)
+            ko_srt_path = base_path + "_ko.srt"
+            if os.path.exists(ko_srt_path):
+                self.ko_srt_path = ko_srt_path
+                self.ko_srt_label.config(text=f"자막2: {ko_srt_path}")
+            
             self.try_load_all()
 
     def select_de_srt(self):

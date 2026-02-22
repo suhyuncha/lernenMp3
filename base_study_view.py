@@ -13,12 +13,17 @@ class BaseStudyView(tk.Frame):
         self.audio_path = None
         self.segment_frames = []  # 각 세그먼트별 Frame 저장
         self.highlighted_set = set()  # 여러 개 하이라이트 지원
+        self.ko_visibility = {}  # 각 segment의 한글 자막 표시 여부 {idx: True/False}
         self.use_textbox = use_textbox
 
         if use_textbox:
-            # 재생 속도 옵션 (텍스트박스 위)
-            speed_frame = tk.Frame(self, bg="#f0f0f0")
-            speed_frame.pack(pady=5, padx=10, fill='x')
+            # 상단 옵션 프레임
+            options_container = tk.Frame(self, bg="#f0f0f0")
+            options_container.pack(pady=5, padx=10, fill='x')
+            
+            # 1. 재생 속도 옵션
+            speed_frame = tk.Frame(options_container, bg="#f0f0f0")
+            speed_frame.pack(side='top', fill='x', pady=2)
             
             tk.Label(speed_frame, text="재생 속도:", bg="#f0f0f0", font=("Arial", 10)).pack(side='left', padx=(0, 10))
             
@@ -34,6 +39,20 @@ class BaseStudyView(tk.Frame):
                     bg="#f0f0f0",
                     font=("Arial", 10)
                 ).pack(side='left', padx=5)
+            
+            # 2. 한글 자막 전체 표시/숨김 옵션
+            ko_all_frame = tk.Frame(options_container, bg="#f0f0f0")
+            ko_all_frame.pack(side='top', fill='x', pady=2)
+            
+            self.ko_all_visible_var = tk.BooleanVar(value=True)
+            tk.Checkbutton(
+                ko_all_frame,
+                text="한글 자막 전체 표시",
+                variable=self.ko_all_visible_var,
+                command=self.toggle_all_ko_visibility,
+                bg="#f0f0f0",
+                font=("Arial", 10)
+            ).pack(side='left', padx=(0, 10))
             
             # 텍스트박스
             self.text_box = tk.Text(self, height=30, font=("Arial", 11))
@@ -72,27 +91,49 @@ class BaseStudyView(tk.Frame):
             # 기존 버튼 제거
             for btn in getattr(self, "highlight_btns", []):
                 btn.destroy()
+            for btn in getattr(self, "ko_checkbox_btns", []):
+                btn.destroy()
             self.highlight_btns = []
+            self.ko_checkbox_btns = []
+            self.ko_visibility = {}  # 초기화
             self.text_box.delete("1.0", tk.END)
             for i, seg in enumerate(segments):
                 de = seg["text"].strip()
                 ko = ko_sentences[i].strip() if i < len(ko_sentences) else ""
-                # 버튼 생성
-                btn = tk.Button(
+                
+                # 별(★) 버튼 - 하이라이트 토글
+                btn_highlight = tk.Button(
                     self.text_box,
                     text="★",
                     width=1,
                     relief="flat",
                     command=lambda idx=i: self.toggle_highlight(idx)
                 )
-                self.highlight_btns.append(btn)
-                # 버튼을 텍스트박스에 삽입
-                self.text_box.window_create(tk.END, window=btn)
-                # 버튼 오른쪽에 독일어 텍스트 삽입 (줄 태그 포함)
+                self.highlight_btns.append(btn_highlight)
+                self.text_box.window_create(tk.END, window=btn_highlight)
+                
+                # 체크박스 버튼 - 한글 자막 표시/숨김 토글 (초기값: 표시됨)
+                ko_visible = True
+                self.ko_visibility[i] = ko_visible
+                checkbox_text = "☑"  # 체크됨
+                checkbox_btn = tk.Button(
+                    self.text_box,
+                    text=checkbox_text,
+                    width=1,
+                    relief="flat",
+                    command=lambda idx=i: self.toggle_ko_visibility(idx),
+                    font=("Arial", 9)
+                )
+                self.ko_checkbox_btns.append(checkbox_btn)
+                self.text_box.window_create(tk.END, window=checkbox_btn)
+                
+                # 독일어 텍스트 삽입
                 self.text_box.insert(tk.END, " " + de + "\n", ("de", f"seg_{i}"))
-                # 한글 텍스트는 들여쓰기해서 삽입 (같은 세그먼트 태그)
-                indent = " " * (11)  # +1은 버튼 오른쪽 한 칸
-                self.text_box.insert(tk.END, indent + ko + "\n", ("ko", f"seg_{i}"))
+                
+                # 한글 텍스트 삽입 (초기에는 보임)
+                indent = " " * (3)
+                self.text_box.insert(tk.END, indent + ko + "\n", ("ko", f"ko_seg_{i}"))
+                
                 # 세그먼트 간 공백 줄
                 self.text_box.insert(tk.END, "\n")
 
@@ -165,6 +206,50 @@ class BaseStudyView(tk.Frame):
         else:
             self.text_box.tag_configure(seg_tag, background="")
             self.highlighted_set.discard(idx)
+
+    def toggle_ko_visibility(self, idx):
+        """문장 단위로 한글 자막 표시/숨김 토글"""
+        ko_tag = f"ko_seg_{idx}"
+        
+        # 현재 상태 토글
+        self.ko_visibility[idx] = not self.ko_visibility[idx]
+        
+        if self.ko_visibility[idx]:
+            # 한글 자막 보이기 (녹색)
+            self.text_box.tag_configure(ko_tag, foreground="green")
+            # 체크박스 버튼 표시 (☑)
+            if idx < len(self.ko_checkbox_btns):
+                self.ko_checkbox_btns[idx].config(text="☑")
+        else:
+            # 한글 자막 숨기기 (흰색 = 배경색과 같음)
+            self.text_box.tag_configure(ko_tag, foreground="white")
+            # 체크박스 버튼 표시 (☐)
+            if idx < len(self.ko_checkbox_btns):
+                self.ko_checkbox_btns[idx].config(text="☐")
+
+    def toggle_all_ko_visibility(self):
+        """모든 문장의 한글 자막을 일괄 표시/숨김"""
+        # 전체 체크박스 상태 확인
+        show_all = self.ko_all_visible_var.get()
+        
+        # 모든 문장에 대해 일괄 처리
+        for idx in range(len(self.segments)):
+            ko_tag = f"ko_seg_{idx}"
+            
+            if show_all:
+                # 한글 자막 모두 보이기 (녹색)
+                self.text_box.tag_configure(ko_tag, foreground="green")
+                self.ko_visibility[idx] = True
+                # 체크박스 버튼 표시 (☑)
+                if idx < len(self.ko_checkbox_btns):
+                    self.ko_checkbox_btns[idx].config(text="☑")
+            else:
+                # 한글 자막 모두 숨기기 (흰색)
+                self.text_box.tag_configure(ko_tag, foreground="white")
+                self.ko_visibility[idx] = False
+                # 체크박스 버튼 표시 (☐)
+                if idx < len(self.ko_checkbox_btns):
+                    self.ko_checkbox_btns[idx].config(text="☐")
 
     def play_segment_by_idx(self, idx):
         seg = self.segments[idx]
