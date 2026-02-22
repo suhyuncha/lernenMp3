@@ -134,9 +134,7 @@ class ConvertView(tk.Frame):
             return Translator()  # 기본값
 
     def check_process(self):
-        print("Checking process...")
         if self.queue is not None and not self.queue.empty():
-            print("Data received from queue")
             data = self.queue.get()
             end_time = time.time()
             minutes = int(self.audio_duration // 60)
@@ -152,7 +150,7 @@ class ConvertView(tk.Frame):
                 self.last_result = result
 
                 # 1. 구두점 기준 문장 단위로 변환
-                segments = split_segments_into_sentences(result["segments"])
+                segments = split_segments_by_period(result["segments"])
 
                 # 추출 완료 메시지 info_text_box에 출력
                 self.log_info("추출이 완료되었습니다.\n번역을 시작합니다..")
@@ -163,8 +161,7 @@ class ConvertView(tk.Frame):
                 # --- 선택된 번역기 사용 ---
                 self.ko_sentences = []
                 translator = self.get_translator()
-                print(f"Translating {len(segments)} segments")
-                for i, seg in enumerate(segments):
+                for seg in segments:
                     try:
                         if self.translator_var.get() == "google":
                             ko = translator.translate(seg["text"], src='de', dest='ko').text
@@ -175,9 +172,6 @@ class ConvertView(tk.Frame):
                     except Exception:
                         ko = "[번역실패] " + seg["text"]
                     self.ko_sentences.append(ko)
-                    if i % 10 == 0:
-                        print(f"Translated {i+1}/{len(segments)}")
-                print("Translation completed")
 
                 # 3. SRT 저장(독일어/한글) 모두 문장 단위 segments 기준, 싱크 동일하게
                 if self.mp3_file:
@@ -328,57 +322,28 @@ def split_segments_by_period(segments):
         char_idx = sent_end
     return new_segments
 
-def split_segments_into_sentences(segments):
+def merge_segments_to_sentences(segments):
     import re
-    # 먼저 세그먼트를 더 큰 청크로 병합 (예: 10초 단위)
-    merged_segments = []
-    current_text = ""
-    current_start = None
-    current_end = None
+    merged = []
+    buffer = ""
+    start_time = None
     for seg in segments:
-        if current_start is None:
-            current_start = seg["start"]
-        current_text += (" " if current_text else "") + seg["text"].strip()
-        current_end = seg["end"]
-        # 10초마다 또는 구두점에서 병합 청크 생성
-        if current_end - current_start >= 10 or re.search(r'[.!?]$', current_text.strip()):
-            merged_segments.append({
-                "start": current_start,
-                "end": current_end,
-                "text": current_text.strip()
+        if start_time is None:
+            start_time = seg["start"]
+        buffer += (" " if buffer else "") + seg["text"].strip()
+        if re.search(r'[.!?]["\']?$', buffer.strip()):
+            merged.append({
+                "start": start_time,
+                "end": seg["end"],
+                "text": buffer.strip()
             })
-            current_text = ""
-            current_start = None
-    if current_text:
-        merged_segments.append({
-            "start": current_start if current_start is not None else segments[-1]["start"],
+            buffer = ""
+            start_time = None
+    # 남은 buffer 처리
+    if buffer:
+        merged.append({
+            "start": start_time if start_time is not None else segments[-1]["start"],
             "end": segments[-1]["end"],
-            "text": current_text.strip()
+            "text": buffer.strip()
         })
-
-    # 이제 병합된 청크에서 문장 분리
-    new_segments = []
-    for seg in merged_segments:
-        text = seg["text"].strip()
-        if not text:
-            continue
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-        sentences = [s.strip() for s in sentences if s.strip()]
-        if not sentences:
-            continue
-        total_chars = sum(len(s) for s in sentences)
-        if total_chars == 0:
-            continue
-        start_time = seg["start"]
-        duration = seg["end"] - seg["start"]
-        current_time = start_time
-        for sentence in sentences:
-            char_ratio = len(sentence) / total_chars
-            end_time = current_time + duration * char_ratio
-            new_segments.append({
-                "start": current_time,
-                "end": end_time,
-                "text": sentence
-            })
-            current_time = end_time
-    return new_segments
+    return merged
