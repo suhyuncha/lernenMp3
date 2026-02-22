@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 import os
 
+from split_view import SplitView
 from convert_view import ConvertView
 from study_loading_view import StudyWithLoadingView
 
@@ -27,9 +28,11 @@ class MainApp(tk.Tk):
         self.geometry("1000x800")
 
         notebook = ttk.Notebook(self)
+        self.split_view = SplitView(notebook)
         self.convert_view = ConvertView(notebook)
         self.study_loading_view = StudyWithLoadingView(notebook)
         # Add tabs to the Notebook
+        notebook.add(self.split_view, text="Split")
         notebook.add(self.convert_view, text="Convert")
         notebook.add(self.study_loading_view, text="Study (Extracted/Pre-extracted)")
         notebook.pack(expand=True, fill='both')
@@ -58,35 +61,6 @@ class MainApp(tk.Tk):
             self.filemenu.entryconfig(0, state=tk.DISABLED)
         else:
             self.filemenu.entryconfig(0, state=tk.NORMAL)
-        
-        if current_tab == "Study":
-            # When the "Study" tab is selected, check if there is a conversion result
-            if not self.convert_view.last_result:
-                messagebox.showwarning("Warning", "No conversion result found.\nPlease run conversion in the 'Convert' tab first.")
-                # Automatically switch to the "Convert" tab
-                event.widget.select(self.convert_view)
-            else:
-                # 변환 결과가 있으면 StudyView에 데이터 전달
-                self.study_view.load_segments(
-                    self.convert_view.last_result["segments"],
-                    self.convert_view.mp3_file,
-                    self.convert_view.ko_sentences
-                )
-        elif current_tab == "Study (Extracted/Pre-extracted)":
-            # If there is a conversion result and the files have not been loaded yet, load them automatically
-            if (self.convert_view.last_result and
-                self.convert_view.mp3_file and
-                hasattr(self.study_loading_view, "mp3_path") and
-                not self.study_loading_view.mp3_path):
-                base = os.path.splitext(self.convert_view.mp3_file)[0]
-                de_srt_path = base + ".srt"
-                ko_srt_path = base + "_ko.srt"
-                # StudyWithLoadingView의 load_files 호출
-                self.study_loading_view.load_files(
-                    self.convert_view.mp3_file,
-                    de_srt_path,
-                    ko_srt_path
-                )
 
 if __name__ == "__main__":
     app = MainApp()

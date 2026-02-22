@@ -30,6 +30,28 @@ class ConvertView(tk.Frame):
         tk.Radiobutton(radio_frame, text="Papago", variable=self.translator_var, value="papago").pack(side='left')
         # 필요시 다른 번역기도 추가
 
+        # --- 파일 선택 버튼 프레임 ---
+        file_frame = tk.Frame(self, bg="#f0f0f0")
+        file_frame.pack(pady=10, padx=10, fill='x')
+        
+        self.file_btn = tk.Button(
+            file_frame,
+            text="MP3 파일 선택",
+            command=self.open_file,
+            font=("Arial", 10)
+        )
+        self.file_btn.pack(side='left', padx=5)
+        
+        # 선택된 파일 표시
+        self.file_label = tk.Label(
+            file_frame,
+            text="선택된 파일: (없음)",
+            anchor='w',
+            bg="#f0f0f0",
+            font=("Arial", 10)
+        )
+        self.file_label.pack(side='left', padx=10, fill='x', expand=True)
+
         # 프레임 생성
         top_frame = tk.Frame(self)
         top_frame.pack(pady=10)
@@ -80,6 +102,8 @@ class ConvertView(tk.Frame):
         )
         if file_path:
             self.mp3_file = file_path
+            filename = os.path.basename(file_path)
+            self.file_label.config(text=f"선택된 파일: {filename}")
             self.log_info(f"선택된 파일: {file_path}")
             self.text_box.delete("1.0", tk.END)
             self.convert_btn.config(state=tk.NORMAL)
@@ -106,7 +130,7 @@ class ConvertView(tk.Frame):
             return
         self.convert_btn.config(state=tk.DISABLED)
         self.status_var.set("상태: 변환중...")
-        self.log_info("변환을 시작합니다...")
+        self.log_info("텍스트 추출을 시작합니다...")
         minutes = int(self.audio_duration // 60)
         seconds = int(self.audio_duration % 60)
         self.start_time = time.time()
@@ -136,7 +160,6 @@ class ConvertView(tk.Frame):
     def check_process(self):
         if self.queue is not None and not self.queue.empty():
             data = self.queue.get()
-            end_time = time.time()
             minutes = int(self.audio_duration // 60)
             seconds = int(self.audio_duration % 60)
             if data["error"]:
@@ -184,6 +207,9 @@ class ConvertView(tk.Frame):
                 self.save_srt_by_sentences(segments, de_srt_path)
                 self.save_srt_korean_by_sentences(segments, self.ko_sentences, ko_srt_path)
 
+                # ✅ 여기서 end_time 기록 (모든 작업 완료 후)
+                end_time = time.time()
+
                 # SRT 저장 후 StudyView에 데이터 전달
                 if hasattr(self.master, "study_view"):
                     de_segments = parse_srt(de_srt_path)
@@ -203,7 +229,10 @@ class ConvertView(tk.Frame):
                 self.length_var.set(f"오디오 길이: {self.audio_duration:.2f}초 ({minutes}분 {seconds}초)")
                 self.start_var.set(f"시작시간: {time.strftime('%H:%M:%S', time.localtime(self.start_time))}")
                 self.end_var.set(f"종료시간: {time.strftime('%H:%M:%S', time.localtime(end_time))}")
-                self.elapsed_var.set(f"소요시간: {end_time - self.start_time:.2f}초")
+                elapsed_seconds = end_time - self.start_time
+                elapsed_minutes = int(elapsed_seconds // 60)
+                elapsed_secs = int(elapsed_seconds % 60)
+                self.elapsed_var.set(f"소요시간: {elapsed_minutes}분 {elapsed_secs}초 (총 {elapsed_seconds:.1f}초)")
                 self.save_text_btn.config(state=tk.NORMAL)
                 # self.save_ko_srt_whole_btn.config(state=tk.NORMAL)  # 한글 SRT 저장 버튼 활성화 제거
 
@@ -280,7 +309,7 @@ class ConvertView(tk.Frame):
 # 독일어 접속사 리스트
 GERMAN_CONJUNCTIONS = {
     # 등위 접속사 (coordinating conjunctions)
-    'und', 'aber', 'oder', 'denn', 'sondern', 'noch', 'so',
+    # 'und', 'aber', 'oder', 'denn', 'sondern', 'noch', 'so',
     # 종속 접속사 (subordinating conjunctions) - 주요 항목만
     'weil', 'obwohl', 'wenn', 'während', 'da', 'nachdem', 'bevor',
     'sobald', 'falls', 'insofern', 'damit', 'sodass', 'indem'
